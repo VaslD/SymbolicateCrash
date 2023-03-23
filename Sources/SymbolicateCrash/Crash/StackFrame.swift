@@ -22,13 +22,13 @@ struct StackFrame {
     }
     
     @discardableResult
-    mutating func symbolicate(archive: XcodeArchive) -> Bool {
-        guard let dSYM = archive.dSYMs.first(where: { $0.name == self.binaryName }) else { return false }
+    mutating func symbolicate(dSYMs: [DebugSymbols]) -> Bool {
+        guard let dSYM = dSYMs.first(where: { $0.name == self.binaryName }) else { return false }
         
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
         process.arguments = [
-            "atos", "-arch", archive.application.architectures.first!,
+            "atos", "-arch", dSYM.architecture,
             "-o", dSYM.path.path,
             "-l", "0x\(String(self.binaryImage, radix: 16))", "0x\(String(self.symbolAddress, radix: 16))"
         ]

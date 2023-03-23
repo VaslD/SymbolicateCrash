@@ -1,6 +1,6 @@
 import Foundation
 
-struct ArchivedApplication: Identifiable, Decodable {
+struct Application: Identifiable, Decodable {
     let id: String
     let version: String
     let build: String

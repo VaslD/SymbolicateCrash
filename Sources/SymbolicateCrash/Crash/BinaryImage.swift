@@ -21,30 +21,4 @@ struct BinaryImage: Identifiable {
         self.architecture = String(match.4)
         self.path = URL(fileURLWithPath: String(match.6))
     }
-
-    func validate(dSYMs: [ArchivedSymbols]) -> Bool {
-        guard let dSYM = dSYMs.first(where: { $0.name == self.name }) else { return false }
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-        process.arguments = [
-            "dwarfdump", "--uuid", dSYM.path.path
-        ]
-        var environment = ProcessInfo.processInfo.environment
-        environment["TERM"] = "dumb"
-        environment["LANG"] = "en_US.UTF-8"
-        process.environment = environment
-        let pipeOut = Pipe()
-        process.standardOutput = pipeOut
-        process.standardError = Pipe()
-        guard case .success = Result(catching: { try process.run() }) else { return false }
-        process.waitUntilExit()
-        guard process.terminationStatus == EX_OK else { return false }
-
-        guard let output = try? pipeOut.fileHandleForReading.readToEnd().flatMap({
-            String(data: $0, encoding: .utf8)?.trimmingCharacters(in: .newlines)
-        }), let match = try? #/UUID: ([0-9A-Z\-]+) \((arm64e?)\)/#.firstMatch(in: output) else { return false }
-
-        return UUID(uuidString: String(match.1))! == self.id && match.2 == self.architecture
-    }
 }

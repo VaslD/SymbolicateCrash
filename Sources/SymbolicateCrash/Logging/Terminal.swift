@@ -5,7 +5,7 @@ let isTTY = ProcessInfo.processInfo.environment["TERM"] != "dumb" && isatty(file
 
 struct TerminalLogHandler: LogHandler {
     let label: String
-    
+
     init(label: String) {
         self.label = label
         self.logLevel = isTTY ? .trace : .info
@@ -23,7 +23,29 @@ struct TerminalLogHandler: LogHandler {
 
     func log(level: Logger.Level, message: Logger.Message, metadata: Logger.Metadata?,
              source: String, file: String, function: String, line: UInt) {
-        if level < .info, !isTTY { return }
-        print(message)
+        switch level {
+        case .trace where isTTY:
+            print("\u{001B}[37m\(message)\u{001B}[0m")
+
+        case .debug where isTTY:
+            print(message)
+
+        case .info, .notice:
+            print(message)
+
+        case .warning where isTTY:
+            print("\u{001B}[33m\(message)\u{001B}[0m")
+
+        case .error where isTTY, .critical where isTTY:
+            print("\u{001B}[31m\(message)\u{001B}[0m")
+
+        case .critical, .error, .warning:
+            print(message)
+
+        default:
+            break
+        }
+
+        fflush(stdout)
     }
 }

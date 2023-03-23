@@ -5,8 +5,8 @@ struct XcodeArchive: Decodable {
     let name: String
     let scheme: String
     let date: Date
-    let application: ArchivedApplication
-    private(set) var dSYMs: [ArchivedSymbols]!
+    let application: Application
+    private(set) var dSYMs: [DebugSymbols]!
     
     enum CodingKeys: String, CodingKey {
         case version = "ArchiveVersion"
@@ -14,7 +14,6 @@ struct XcodeArchive: Decodable {
         case scheme = "SchemeName"
         case date = "CreationDate"
         case application = "ApplicationProperties"
-        case dSYMs
     }
     
     init(_ archive: URL) throws {
@@ -26,7 +25,7 @@ struct XcodeArchive: Decodable {
             at: archive.appendingPathComponent("dSYMs", isDirectory: true),
             includingPropertiesForKeys: nil
         )
-        self.dSYMs = try dSYMs.map { try ArchivedSymbols($0) }
+        self.dSYMs = try dSYMs.map { try DebugSymbols($0) }
     }
 }
 

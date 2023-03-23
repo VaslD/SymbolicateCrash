@@ -12,13 +12,13 @@ struct CrashLog {
     }
 
     @discardableResult
-    mutating func symbolicate(archive: XcodeArchive) -> [(binary: String, address: String, isSymbolicated: Bool)] {
+    mutating func symbolicate(dSYMs: [DebugSymbols]) -> [(binary: String, address: String, isSymbolicated: Bool)] {
         var results = [(String, String, Bool)]()
         var replacements = [(Int, String)]()
         for (index, line) in self.lines.enumerated() {
             guard var frame = StackFrame(line) else { continue }
 
-            guard frame.symbolicate(archive: archive),
+            guard frame.symbolicate(dSYMs: dSYMs),
                   frame.description != line else {
                 results.append((frame.binaryName, "0x\(String(frame.symbolAddress, radix: 16))", false))
                 continue
@@ -32,7 +32,7 @@ struct CrashLog {
         return results
     }
 
-    func validate(archive: XcodeArchive) -> [(id: UUID, image: String, matches: Bool)] {
+    func validate(dSYMs: [DebugSymbols]) -> [(id: UUID, image: String, matches: Bool)] {
         var images = [BinaryImage]()
         var shouldRead = false
         for line in self.lines {
@@ -50,7 +50,10 @@ struct CrashLog {
 
             images.append(BinaryImage(line)!)
         }
-        return images.map { ($0.id, $0.name, $0.validate(dSYMs: archive.dSYMs)) }.sorted { $0.image < $1.image }
+        return images.map { image in
+            let isValid = dSYMs.contains { $0.id == image.id }
+            return (image.id, image.name, isValid)
+        }.sorted { $0.image < $1.image }
     }
 }
 
