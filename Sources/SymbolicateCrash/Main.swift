@@ -7,7 +7,7 @@ import TabularData
 struct SymbolicateCrashCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Symbolicate *.crash with dSYMs from *.xcarchive.",
-        version: "1.0.1"
+        version: "1.1.0"
     )
 
     @Argument(help: "Path to an *.xcarchive bundle.")
@@ -38,26 +38,37 @@ struct SymbolicateCrashCommand: AsyncParsableCommand {
         logger.trace("Read \(log.description.count) lines")
         logger.trace("")
 
+        logger.trace("Validating dSYMs…")
+        let dSYMs = log.validate(archive: archive)
+        var summary = DataFrame()
+        summary.append(column: Column<String>(name: "Binary", capacity: dSYMs.count))
+        summary.append(column: Column<String>(name: "UUID", capacity: dSYMs.count))
+        summary.append(column: Column<String>(name: "dSYM", capacity: dSYMs.count))
+        for result in dSYMs {
+            summary.append(row: result.image, result.id.uuidString, result.matches ? "YES" : String())
+        }
+        var options = FormattingOptions()
+        options.maximumRowCount = dSYMs.count
+        options.includesColumnTypes = false
+        logger.debug("\(summary.description(options: options))")
+
         logger.trace("Looking up symbols…")
         let results = log.symbolicate(archive: archive)
-        logger.trace("")
-
-        var summary = DataFrame()
+        summary = DataFrame()
         summary.append(column: Column<String>(name: "Binary", capacity: results.count))
         summary.append(column: Column<String>(name: "Symbol", capacity: results.count))
         summary.append(column: Column<String>(name: "Result", capacity: results.count))
         for result in results {
             summary.append(row: result.binary, result.address, result.isSymbolicated ? "OK" : String())
         }
-        var options = FormattingOptions()
         options.maximumRowCount = results.count
-        options.includesColumnTypes = false
         logger.debug("\(summary.description(options: options))")
 
         if let file = self.output,
            case .success = Result(catching: { try log.description.data(using: .utf8)!.write(to: file) }) {
             return
         }
+        logger.info("━━━━━━━━━━")
         logger.info("\(log)")
     }
 }

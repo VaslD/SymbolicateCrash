@@ -31,6 +31,27 @@ struct CrashLog {
         }
         return results
     }
+
+    func validate(archive: XcodeArchive) -> [(id: UUID, image: String, matches: Bool)] {
+        var images = [BinaryImage]()
+        var shouldRead = false
+        for line in self.lines {
+            guard shouldRead else {
+                if line == "Binary Images:" {
+                    shouldRead = true
+                }
+                continue
+            }
+
+            guard !line.isEmpty else {
+                shouldRead = false
+                break
+            }
+
+            images.append(BinaryImage(line)!)
+        }
+        return images.map { ($0.id, $0.name, $0.validate(dSYMs: archive.dSYMs)) }.sorted { $0.image < $1.image }
+    }
 }
 
 // MARK: CustomStringConvertible

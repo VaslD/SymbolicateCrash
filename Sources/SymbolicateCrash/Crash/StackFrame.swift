@@ -38,6 +38,7 @@ struct StackFrame {
         process.environment = environment
         let pipeOut = Pipe()
         process.standardOutput = pipeOut
+        process.standardError = Pipe()
         guard case .success = Result(catching: { try process.run() }) else { return false }
         process.waitUntilExit()
         guard process.terminationStatus == EX_OK else { return false }
