@@ -7,7 +7,7 @@ import TabularData
 struct SymbolicateCrashCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Symbolicate *.crash with dSYMs from *.xcarchive.",
-        version: "1.0.0"
+        version: "1.0.1"
     )
 
     @Argument(help: "Path to an *.xcarchive bundle.")
@@ -28,19 +28,20 @@ struct SymbolicateCrashCommand: AsyncParsableCommand {
             throw POSIXError(.ENOENT)
         }
 
-        logger.debug("Reading Xcode archive…")
+        logger.trace("Reading Xcode archive…")
         let archive = try XcodeArchive(self.archive)
-        logger.debug("\(archive)")
+        logger.trace("\(archive)")
+        logger.trace("")
 
-        logger.debug("")
-
-        logger.debug("Reading crash log…")
+        logger.trace("Reading crash log…")
         var log = CrashLog(self.crashLog)!
-        logger.debug("Read \(log.description.count) lines")
+        logger.trace("Read \(log.description.count) lines")
+        logger.trace("")
 
-        logger.debug("")
-
+        logger.trace("Looking up symbols…")
         let results = log.symbolicate(archive: archive)
+        logger.trace("")
+
         var summary = DataFrame()
         summary.append(column: Column<String>(name: "Binary", capacity: results.count))
         summary.append(column: Column<String>(name: "Symbol", capacity: results.count))

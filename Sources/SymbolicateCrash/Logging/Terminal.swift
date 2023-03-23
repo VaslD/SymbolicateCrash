@@ -8,7 +8,7 @@ struct TerminalLogHandler: LogHandler {
     
     init(label: String) {
         self.label = label
-        self.logLevel = isTTY ? .debug : .info
+        self.logLevel = isTTY ? .trace : .info
         self.metadata = [:]
     }
 

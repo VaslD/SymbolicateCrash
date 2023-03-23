@@ -43,7 +43,7 @@ struct StackFrame {
         guard process.terminationStatus == EX_OK else { return false }
         
         guard let output = try? pipeOut.fileHandleForReading.readToEnd().flatMap({
-            String(data: $0, encoding: .utf8)
+            String(data: $0, encoding: .utf8)?.trimmingCharacters(in: .newlines)
         }) else { return false }
         
         self.symbol = output
@@ -55,7 +55,7 @@ extension StackFrame: CustomStringConvertible {
     var description: String {
         guard let symbol = self.symbol else { return self.original }
         return self.original.replacingOccurrences(
-            of: "0x\(String(self.symbolAddress, radix: 16)) + \(self.offset)",
+            of: "0x\(String(self.binaryImage, radix: 16)) + \(self.offset)",
             with: symbol
         )
     }
